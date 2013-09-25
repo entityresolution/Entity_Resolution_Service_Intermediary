@@ -58,6 +58,12 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+/**
+ * This class bridges the Camel Route to the Entity Resolution OSGi bundle.  It is responsible for processing attribute parameters
+ * either from a static configuration file or from the inbound message payload.  It also converts the XML payload into Java objects
+ * for the Entity Resolution algorithm to process and then converts Java objects back to XML for the merged response.
+ * 
+ */
 public class EntityResolutionMessageHandler
 {
 	
