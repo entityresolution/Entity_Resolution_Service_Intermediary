@@ -81,6 +81,15 @@ public class EntityResolutionMessageHandler
 
 	}
 
+	/**
+	 * This method is called from the Camel route and binds the parameters to the method arguments using an xpath expression.
+	 * The result of the ER merge operation is set as the exchange body upon completion.
+	 * 
+	 * @param exchange
+	 * @param entityContainerNodeList
+	 * @param attributeParametersNodeList
+	 * @throws Exception
+	 */
 	public void process(Exchange exchange,
 			@CamelXpathAnnotations("/merge:EntityMergeRequestMessage/merge:MergeParameters/er-ext:EntityContainer") NodeList entityContainerNodeList, 
 			@CamelXpathAnnotations("/merge:EntityMergeRequestMessage/merge:MergeParameters/er-ext:AttributeParameters") NodeList attributeParametersNodeList) throws Exception
@@ -96,6 +105,17 @@ public class EntityResolutionMessageHandler
 
 	}
 
+	/**
+	 * This method performs entity resolution and returns the Merge Response Document.
+	 * 
+	 * @param entityContainerNode
+	 * @param attributeParametersNode
+	 * @return
+	 * @throws Exception
+	 * @throws ParserConfigurationException
+	 * @throws XPathExpressionException
+	 * @throws TransformerException
+	 */
 	Document performEntityResolution(Node entityContainerNode, Node attributeParametersNode) throws Exception,
 			ParserConfigurationException, XPathExpressionException, TransformerException
 	{		
@@ -183,6 +203,15 @@ public class EntityResolutionMessageHandler
 		return ret;
 	}
 
+	/**
+	 * This method takes the entity and attribute parameter nodes as arguments and converts the XML
+	 * to Java Objects so Entity Resolution can be performed.
+	 * 
+	 * @param entityContainerNode
+	 * @param attributeParametersNode
+	 * @return
+	 * @throws Exception
+	 */
 
 	List<RecordWrapper> createRecordsFromRequestMessage(Node entityContainerNode, Node attributeParametersNode)
 			throws Exception
@@ -234,6 +263,14 @@ public class EntityResolutionMessageHandler
 		
 	}
 
+	/**
+	 * Xpath performance degrades on large documents so this workaround was needed to improve performance.
+	 * See link inline in the code.
+	 * 
+	 * @param entityElement
+	 * @return
+	 * @throws ParserConfigurationException
+	 */
     private Element createOrphanElement(Element entityElement) throws ParserConfigurationException {
         
         // this is necessary to avoid a performance bottleneck in the Xalan xpath engine
@@ -250,6 +287,16 @@ public class EntityResolutionMessageHandler
         
     }
 
+    /**
+     * This method takes the ER response and converts the Java objects to the Merge Response XML.
+     * 
+     * @param entityContainerNode
+     * @param results
+     * @return
+     * @throws ParserConfigurationException
+     * @throws XPathExpressionException
+     * @throws TransformerException
+     */
 	private Document createResponseMessage(Node entityContainerNode, EntityResolutionResults results)
 			throws ParserConfigurationException, XPathExpressionException, TransformerException
 	{
@@ -339,7 +386,9 @@ public class EntityResolutionMessageHandler
 
 	}
 		
-	// for testing only
+	/**
+	 * This is used in testing to allow the attribute parameters to be read from a static file
+	 */
 	void setAttributeParametersStream(InputStream attributeParametersStream) throws Exception
 	{
 		XmlConverter xmlConverter = new XmlConverter();
@@ -347,6 +396,13 @@ public class EntityResolutionMessageHandler
 		attributeParametersDocument = xmlConverter.toDOMDocument(attributeParametersStream);
 	}
 
+	/**
+	 * This setter allows the attribute parameters document to be read from a static file.
+	 * It can still be overridden if the attribute parameters are in the message.
+	 * 
+	 * @param attributeParametersURL
+	 * @throws Exception
+	 */
 	public void setAttributeParametersURL(String attributeParametersURL)
 			throws Exception {
 		try {
