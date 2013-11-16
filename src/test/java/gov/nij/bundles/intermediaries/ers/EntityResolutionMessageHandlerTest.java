@@ -29,6 +29,8 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Set;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
@@ -64,23 +66,22 @@ public class EntityResolutionMessageHandlerTest extends TestCase {
         testRequestMessageInputStream = getClass().getResourceAsStream("/xml/EntityMergeRequestMessage.xml");
         assertNotNull(testRequestMessageInputStream);
     }
-    
+
     @Test
     public void testPerformEntityResolutionWithDetermFactors() throws Exception {
-        LOG.info("Starting testPerformEntityResolutionWithDetermFactors()");
         XmlConverter converter = new XmlConverter();
         converter.getDocumentBuilderFactory().setNamespaceAware(true);
         InputStream attributeParametersStream = getClass().getResourceAsStream("/xml/TestAttributeParametersWithDeterm.xml");
         entityResolutionMessageHandler.setAttributeParametersStream(attributeParametersStream);
         testRequestMessageInputStream = getClass().getResourceAsStream("/xml/EntityMergeRequestMessageForDeterm.xml");
         Document testRequestMessage = converter.toDOMDocument(testRequestMessageInputStream);
-        
+
         Node entityContainerNode = testRequestMessage.getElementsByTagNameNS(EntityResolutionNamespaceContext.ER_EXT_NAMESPACE, "EntityContainer").item(0);
         assertNotNull(entityContainerNode);
-        Document resultDocument = entityResolutionMessageHandler.performEntityResolution(entityContainerNode, null);
-        
+        Document resultDocument = entityResolutionMessageHandler.performEntityResolution(entityContainerNode, null, null);
+
         resultDocument.normalizeDocument();
-        //LOG.info(converter.toString(resultDocument));
+        // LOG.info(converter.toString(resultDocument));
         XPath xp = XPathFactory.newInstance().newXPath();
         xp.setNamespaceContext(new EntityResolutionNamespaceContext());
         NodeList entityNodes = (NodeList) xp.evaluate("//merge-result:EntityContainer/merge-result-ext:Entity", resultDocument, XPathConstants.NODESET);
@@ -98,19 +99,116 @@ public class EntityResolutionMessageHandlerTest extends TestCase {
     }
 
     @Test
-    public void testPerformEntityResolution() throws Exception {
-        LOG.info("Starting testPerformEntityResolution()");
+    public void testRecordLimit() throws Exception {
+
         XmlConverter converter = new XmlConverter();
         converter.getDocumentBuilderFactory().setNamespaceAware(true);
         Document testRequestMessage = converter.toDOMDocument(testRequestMessageInputStream);
-        
+
         Node entityContainerNode = testRequestMessage.getElementsByTagNameNS(EntityResolutionNamespaceContext.ER_EXT_NAMESPACE, "EntityContainer").item(0);
         assertNotNull(entityContainerNode);
+
+        Node entityResolutionConfigurationNode = makeEntityResolutionConfigurationNode(String.valueOf(Integer.MAX_VALUE));
+
+        Document resultDocument = entityResolutionMessageHandler.performEntityResolution(entityContainerNode, null, entityResolutionConfigurationNode);
+
+        XPath xp = XPathFactory.newInstance().newXPath();
+        xp.setNamespaceContext(new EntityResolutionNamespaceContext());
+        NodeList entityNodes = (NodeList) xp.evaluate("//merge-result:EntityContainer/merge-result-ext:Entity", resultDocument, XPathConstants.NODESET);
+        int inputEntityNodeCount = 3;
+        assertEquals(inputEntityNodeCount, entityNodes.getLength());
+        entityNodes = (NodeList) xp.evaluate("//merge-result-ext:MergedRecord", resultDocument, XPathConstants.NODESET);
+        assertEquals(2, entityNodes.getLength());
+        String recordLimitExceeded = xp.evaluate("/merge-result:EntityMergeResultMessage/merge-result:RecordLimitExceeded", resultDocument);
+        assertEquals("false", recordLimitExceeded);
         
-        Document resultDocument = entityResolutionMessageHandler.performEntityResolution(entityContainerNode, null);
+        entityResolutionConfigurationNode = makeEntityResolutionConfigurationNode(3+"");
+
+        resultDocument = entityResolutionMessageHandler.performEntityResolution(entityContainerNode, null, entityResolutionConfigurationNode);
+
+        xp.setNamespaceContext(new EntityResolutionNamespaceContext());
+        entityNodes = (NodeList) xp.evaluate("//merge-result:EntityContainer/merge-result-ext:Entity", resultDocument, XPathConstants.NODESET);
+        inputEntityNodeCount = 3;
+        assertEquals(inputEntityNodeCount, entityNodes.getLength());
+        entityNodes = (NodeList) xp.evaluate("//merge-result-ext:MergedRecord", resultDocument, XPathConstants.NODESET);
+        assertEquals(2, entityNodes.getLength());
+        recordLimitExceeded = xp.evaluate("/merge-result:EntityMergeResultMessage/merge-result:RecordLimitExceeded", resultDocument);
+        assertEquals("false", recordLimitExceeded);
         
+        entityResolutionConfigurationNode = makeEntityResolutionConfigurationNode(null);
+
+        resultDocument = entityResolutionMessageHandler.performEntityResolution(entityContainerNode, null, entityResolutionConfigurationNode);
+
+        xp.setNamespaceContext(new EntityResolutionNamespaceContext());
+        entityNodes = (NodeList) xp.evaluate("//merge-result:EntityContainer/merge-result-ext:Entity", resultDocument, XPathConstants.NODESET);
+        inputEntityNodeCount = 3;
+        assertEquals(inputEntityNodeCount, entityNodes.getLength());
+        entityNodes = (NodeList) xp.evaluate("//merge-result-ext:MergedRecord", resultDocument, XPathConstants.NODESET);
+        assertEquals(2, entityNodes.getLength());
+        recordLimitExceeded = xp.evaluate("/merge-result:EntityMergeResultMessage/merge-result:RecordLimitExceeded", resultDocument);
+        assertEquals("false", recordLimitExceeded);
+        
+        entityResolutionConfigurationNode = makeEntityResolutionConfigurationNode("not an int");
+
+        resultDocument = entityResolutionMessageHandler.performEntityResolution(entityContainerNode, null, entityResolutionConfigurationNode);
+
+        xp.setNamespaceContext(new EntityResolutionNamespaceContext());
+        entityNodes = (NodeList) xp.evaluate("//merge-result:EntityContainer/merge-result-ext:Entity", resultDocument, XPathConstants.NODESET);
+        inputEntityNodeCount = 3;
+        assertEquals(inputEntityNodeCount, entityNodes.getLength());
+        entityNodes = (NodeList) xp.evaluate("//merge-result-ext:MergedRecord", resultDocument, XPathConstants.NODESET);
+        assertEquals(2, entityNodes.getLength());
+        recordLimitExceeded = xp.evaluate("/merge-result:EntityMergeResultMessage/merge-result:RecordLimitExceeded", resultDocument);
+        assertEquals("false", recordLimitExceeded);
+        
+        entityResolutionConfigurationNode = makeEntityResolutionConfigurationNode(2+"");
+
+        resultDocument = entityResolutionMessageHandler.performEntityResolution(entityContainerNode, null, entityResolutionConfigurationNode);
+
+        xp.setNamespaceContext(new EntityResolutionNamespaceContext());
+        entityNodes = (NodeList) xp.evaluate("//merge-result:EntityContainer/merge-result-ext:Entity", resultDocument, XPathConstants.NODESET);
+        inputEntityNodeCount = 3;
+        assertEquals(inputEntityNodeCount, entityNodes.getLength());
+        entityNodes = (NodeList) xp.evaluate("//merge-result-ext:MergedRecord", resultDocument, XPathConstants.NODESET);
+        assertEquals(3, entityNodes.getLength());
+        recordLimitExceeded = xp.evaluate("/merge-result:EntityMergeResultMessage/merge-result:RecordLimitExceeded", resultDocument);
+        assertEquals("true", recordLimitExceeded);
+        
+    }
+
+    private Node makeEntityResolutionConfigurationNode(String limit) throws Exception {
+        try {
+        if (Integer.parseInt(limit) == Integer.MAX_VALUE) {
+            return null;
+        }
+        } catch (NumberFormatException nfe) {
+            return null;
+        }
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true);
+        DocumentBuilder db = dbf.newDocumentBuilder();
+        Document d = db.newDocument();
+        Element ret = d.createElementNS(EntityResolutionNamespaceContext.ER_EXT_NAMESPACE, "EntityResolutionConfiguration");
+        d.appendChild(ret);
+        Element e = d.createElementNS(EntityResolutionNamespaceContext.ER_EXT_NAMESPACE, "RecordLimit");
+        ret.appendChild(e);
+        e.setTextContent(limit);
+        return ret;
+    }
+
+    @Test
+    public void testPerformEntityResolution() throws Exception {
+        XmlConverter converter = new XmlConverter();
+        converter.getDocumentBuilderFactory().setNamespaceAware(true);
+        Document testRequestMessage = converter.toDOMDocument(testRequestMessageInputStream);
+
+        Node entityContainerNode = testRequestMessage.getElementsByTagNameNS(EntityResolutionNamespaceContext.ER_EXT_NAMESPACE, "EntityContainer").item(0);
+        assertNotNull(entityContainerNode);
+
+        Document resultDocument = entityResolutionMessageHandler.performEntityResolution(entityContainerNode, null, null);
+
         resultDocument.normalizeDocument();
-        //LOG.info(converter.toString(resultDocument));
+        // LOG.info(converter.toString(resultDocument));
         XPath xp = XPathFactory.newInstance().newXPath();
         xp.setNamespaceContext(new EntityResolutionNamespaceContext());
         NodeList entityNodes = (NodeList) xp.evaluate("//merge-result:EntityContainer/merge-result-ext:Entity", resultDocument, XPathConstants.NODESET);
@@ -126,11 +224,14 @@ public class EntityResolutionMessageHandlerTest extends TestCase {
             assertNotNull(entityIdRef);
             assertNotNull(xp.evaluate("//merge-result-ext:Entity[@s:id='" + entityIdRef + "']", resultDocument, XPathConstants.NODE));
         }
+
+        String recordLimitExceeded = xp.evaluate("/merge-result:EntityMergeResultMessage/merge-result:RecordLimitExceeded", resultDocument);
+        assertEquals("false", recordLimitExceeded);
+
     }
 
     @Test
     public void testAttributeParametersSetup() throws Exception {
-        LOG.info("Starting testAttributeParametersSetup()");
         Set<AttributeParametersXpathSupport> attributeParameters = entityResolutionMessageHandler.getAttributeParameters(null);
         assertEquals(2, attributeParameters.size());
         boolean givenNameFound = false;
@@ -153,17 +254,16 @@ public class EntityResolutionMessageHandlerTest extends TestCase {
 
     @Test
     public void testCreateRecords() throws Exception {
-        LOG.info("Starting testCreateRecords()");
         XmlConverter converter = new XmlConverter();
         converter.getDocumentBuilderFactory().setNamespaceAware(true);
         Document testRequestMessage = converter.toDOMDocument(testRequestMessageInputStream);
         assertNotNull(testRequestMessage);
-        
+
         Node entityContainerNode = testRequestMessage.getElementsByTagNameNS(EntityResolutionNamespaceContext.ER_EXT_NAMESPACE, "EntityContainer").item(0);
         assertNotNull(entityContainerNode);
-        
+
         List<ExternallyIdentifiableRecord> records = EntityResolutionConversionUtils.convertRecordWrappers(entityResolutionMessageHandler.createRecordsFromRequestMessage(entityContainerNode, null));
-        
+
         assertNotNull(records);
         assertEquals(3, records.size());
         boolean mickeyFound = false;
@@ -188,9 +288,7 @@ public class EntityResolutionMessageHandlerTest extends TestCase {
     }
 
     @Test
-    public void testCreateLargeRecordset() throws Exception
-    {
-        LOG.info("Starting testCreateLargeRecordset()");
+    public void testCreateLargeRecordset() throws Exception {
         XPath xp = XPathFactory.newInstance().newXPath();
         xp.setNamespaceContext(new EntityResolutionNamespaceContext());
         XmlConverter converter = new XmlConverter();
@@ -204,17 +302,16 @@ public class EntityResolutionMessageHandlerTest extends TestCase {
         int expectedInitialEntityCount = 3;
         assertEquals(expectedInitialEntityCount, entityCount);
         int recordIncrement = 500;
-        for (int i=0;i < recordIncrement;i++)
-        {
+        for (int i = 0; i < recordIncrement; i++) {
             Element newEntityElement = (Element) entityElement.cloneNode(true);
             entityContainerElement.appendChild(newEntityElement);
         }
         entityCount = ((NodeList) xp.evaluate("er-ext:Entity", entityContainerElement, XPathConstants.NODESET)).getLength();
         assertEquals(expectedInitialEntityCount + recordIncrement, entityCount);
-        
+
         Node entityContainerNode = testRequestMessage.getElementsByTagNameNS(EntityResolutionNamespaceContext.ER_EXT_NAMESPACE, "EntityContainer").item(0);
         assertNotNull(entityContainerNode);
-        
+
         List<RecordWrapper> records = entityResolutionMessageHandler.createRecordsFromRequestMessage(entityContainerNode, null);
         assertEquals(expectedInitialEntityCount + recordIncrement, records.size());
     }
