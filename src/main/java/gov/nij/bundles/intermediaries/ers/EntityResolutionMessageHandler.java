@@ -31,6 +31,8 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -44,6 +46,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
@@ -144,7 +147,7 @@ public class EntityResolutionMessageHandler {
         }
 
         EntityResolutionResults results = entityResolutionService.resolveEntities(records, attributeParameters, recordLimit);
-        Document resultDocument = createResponseMessage(entityContainerNode, results);
+        Document resultDocument = createResponseMessage(entityContainerNode, results, attributeParametersNode, recordLimit);
         // without this next line, we get an exception about an unbound namespace URI (NIEM structures)
         resultDocument.normalizeDocument();
         return resultDocument;
@@ -285,39 +288,46 @@ public class EntityResolutionMessageHandler {
      * 
      * @param entityContainerNode
      * @param results
+     * @param recordLimit
+     * @param attributeParametersNode
      * @return
      * @throws ParserConfigurationException
      * @throws XPathExpressionException
      * @throws TransformerException
      */
-    private Document createResponseMessage(Node entityContainerNode, EntityResolutionResults results) throws ParserConfigurationException, XPathExpressionException, TransformerException {
+    private Document createResponseMessage(Node entityContainerNode, EntityResolutionResults results, Node attributeParametersNode, int recordLimit) throws Exception {
 
         List<RecordWrapper> records = results.getRecords();
 
-        // Create new DOM Document
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         dbf.setNamespaceAware(true);
 
         Document resultDocument = dbf.newDocumentBuilder().newDocument();
 
-        // Create and append root element
         Element entityMergeResultMessageElement = resultDocument.createElementNS(EntityResolutionNamespaceContext.MERGE_RESULT_NAMESPACE, "EntityMergeResultMessage");
         resultDocument.appendChild(entityMergeResultMessageElement);
 
-        // Adopt node into new document that is being created, it will be renamed and then appended
-        Node resultElement = resultDocument.adoptNode(entityContainerNode.cloneNode(true));
+        Element entityContainerElement = resultDocument.createElementNS(EntityResolutionNamespaceContext.MERGE_RESULT_NAMESPACE, "EntityContainer");
+        entityMergeResultMessageElement.appendChild(entityContainerElement);
 
-        // Rename to merge results
-        resultDocument.renameNode(resultElement, EntityResolutionNamespaceContext.MERGE_RESULT_NAMESPACE, resultElement.getLocalName());
-        entityMergeResultMessageElement.appendChild(resultElement);
+        List<Element> inputEntityElements = new ArrayList<Element>();
+        NodeList inputEntityNodes = (NodeList) xpath.evaluate("er-ext:Entity", entityContainerNode, XPathConstants.NODESET);
 
-        // Grab the existing entities that were appended to the new document
-        NodeList entityNodeList = (NodeList) xpath.evaluate("er-ext:Entity", resultElement, XPathConstants.NODESET);
+        for (int i = 0; i < inputEntityNodes.getLength(); i++) {
+            inputEntityElements.add((Element) inputEntityNodes.item(i));
+        }
 
-        // Loop through and rename the new nodes, preserving the local name and changing the namespace
-        for (int i = 0; i < entityNodeList.getLength(); i++) {
-            Node entityNode = entityNodeList.item(i);
-            resultDocument.renameNode(entityNode, EntityResolutionNamespaceContext.MERGE_RESULT_EXT_NAMESPACE, entityNode.getLocalName());
+        if (attributeParametersNode != null) {
+            Collections.sort(inputEntityElements, new EntityElementComparator((Element) attributeParametersNode));
+        } else {
+            LOG.warn("Attribute Parameters element was null");
+        }
+
+        for (Element e : inputEntityElements) {
+            XmlConverter converter = new XmlConverter();
+            Node clone = resultDocument.adoptNode(e.cloneNode(true));
+            resultDocument.renameNode(clone, EntityResolutionNamespaceContext.MERGE_RESULT_EXT_NAMESPACE, e.getLocalName());
+            entityContainerElement.appendChild(clone);
         }
 
         Element mergedRecordsElement = resultDocument.createElementNS(EntityResolutionNamespaceContext.MERGE_RESULT_NAMESPACE, "MergedRecords");
@@ -398,6 +408,89 @@ public class EntityResolutionMessageHandler {
             InputStream is = this.getClass().getResourceAsStream(attributeParametersURL);
             setAttributeParametersStream(is);
         }
+    }
+
+    private static final class EntityElementComparator implements Comparator<Element> {
+
+        private List<SortOrderSpecification> sortOrderSpecifications;
+
+        public EntityElementComparator(Element attributeParametersElement) throws Exception {
+            sortOrderSpecifications = new ArrayList<SortOrderSpecification>();
+            XPath xp = XPathFactory.newInstance().newXPath();
+            xp.setNamespaceContext(new EntityResolutionNamespaceContext());
+            NodeList attributeParameterNodes = (NodeList) xp.evaluate("er-ext:AttributeParameter", attributeParametersElement, XPathConstants.NODESET);
+            for (int i = 0; i < attributeParameterNodes.getLength(); i++) {
+                SortOrderSpecification sortOrderSpecification = SortOrderSpecification.create((Element) attributeParameterNodes.item(i));
+                if (sortOrderSpecification != null) {
+                    sortOrderSpecifications.add(sortOrderSpecification);
+                }
+            }
+            Collections.sort(sortOrderSpecifications);
+        }
+
+        @Override
+        public int compare(Element e1, Element e2) {
+            for (SortOrderSpecification sos : sortOrderSpecifications) {
+                if (sos != null) {
+                    String v1 = null;
+                    String v2 = null;
+                    try {
+                        v1 = sos.xpath.evaluate(e1);
+                        v2 = sos.xpath.evaluate(e2);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                    if (!((v1 == null && v2 == null) || (v1.equals(v2)))) {
+                        return v1.compareTo(v2) * sos.factor;
+                    }
+                }
+            }
+            return 0;
+        }
+
+        private static final class SortOrderSpecification implements Comparable<SortOrderSpecification> {
+
+            public XPathExpression xpath;
+            public int rank;
+            public int factor;
+
+            public static SortOrderSpecification create(Element attributeParameterElement) {
+                XPath xp = XPathFactory.newInstance().newXPath();
+                xp.setNamespaceContext(new EntityResolutionNamespaceContext());
+                SortOrderSpecification ret = null;
+                try {
+                    String attributeName = xp.evaluate("er-ext:AttributeXPath", attributeParameterElement);
+                    String rankS = xp.evaluate("er-ext:AttributeSortSpecification/er-ext:AttributeSortOrderRank", attributeParameterElement);
+                    if (!(rankS == null || rankS.trim().length() == 0)) {
+                        ret = new SortOrderSpecification();
+                        ret.rank = new Integer(rankS);
+                        String factorS = xp.evaluate("er-ext:AttributeSortSpecification/er-ext:AttributeSortOrder", attributeParameterElement);
+                        Map<String, String> namespaceMap = EntityResolutionNamespaceContextHelpers.returnNamespaceMapFromNode(attributeName, attributeParameterElement);
+                        xp.setNamespaceContext(new EntityResolutionNamespaceContextMapImpl(namespaceMap));
+                        ret.xpath = xp.compile(attributeName);
+                        if (factorS == null || "ASCENDING".equals(factorS.toUpperCase())) {
+                            ret.factor = 1;
+                        } else if ("DESCENDING".equals(factorS.toUpperCase())) {
+                            ret.factor = -1;
+                        } else {
+                            throw new IllegalArgumentException("Sort order must be ascending or descending, supplied value=" + factorS);
+                        }
+                    }
+                } catch (Exception e) {
+                    LOG.error("Exception caught in configuring attribute parameter sort:");
+                    e.printStackTrace();
+                    return null;
+                }
+                return ret;
+            }
+
+            @Override
+            public int compareTo(SortOrderSpecification sos) {
+                return rank - sos.rank;
+            }
+
+        }
+
     }
 
 }

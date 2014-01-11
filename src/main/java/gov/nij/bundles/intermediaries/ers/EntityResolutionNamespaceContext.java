@@ -35,7 +35,9 @@ final class EntityResolutionNamespaceContext implements NamespaceContext
 	static final String MERGE_RESULT_NAMESPACE = "http://nij.gov/IEPD/Exchange/EntityMergeResultMessage/1.0";
 	static final String ER_EXT_NAMESPACE = "http://nij.gov/IEPD/Extensions/EntityResolutionExtensions/1.0";
 	static final String MERGE_RESULT_EXT_NAMESPACE = "http://nij.gov/IEPD/Extensions/EntityMergeResultMessageExtensions/1.0";
-	static final String STRUCTURES_NAMESPACE = "http://niem.gov/niem/structures/2.0";
+    static final String STRUCTURES_NAMESPACE = "http://niem.gov/niem/structures/2.0";
+    static final String NC_NAMESPACE = "http://niem.gov/niem/niem-core/2.0";
+    static final String JXDM_NAMESPACE = "http://niem.gov/niem/domains/jxdm/4.1";
 	
 	public String getNamespaceURI(String prefix)
 	{
@@ -54,7 +56,13 @@ final class EntityResolutionNamespaceContext implements NamespaceContext
 		} else if ("s".equals(prefix))
 		{
 			return EntityResolutionNamespaceContext.STRUCTURES_NAMESPACE;
-		}
+        } else if ("nc".equals(prefix))
+        {
+            return EntityResolutionNamespaceContext.NC_NAMESPACE;
+        } else if ("jxdm".equals(prefix))
+        {
+            return EntityResolutionNamespaceContext.JXDM_NAMESPACE;
+        }
 
 		return null;
 	}

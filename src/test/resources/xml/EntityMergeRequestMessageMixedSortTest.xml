@@ -36,18 +36,30 @@
 				<er-ext:AttributeThresholdValue>0.8</er-ext:AttributeThresholdValue>
 				<er-ext:AttributeIsDeterminativeIndicator>false</er-ext:AttributeIsDeterminativeIndicator>
 				<er-ext:AttributeMatchAlgorithmSimmetricsURICode>urn:org:search:ers:algorithms:ss.wcohen.com.Jaro</er-ext:AttributeMatchAlgorithmSimmetricsURICode>
+				<er-ext:AttributeSortSpecification>
+					<er-ext:AttributeSortOrderRank>2</er-ext:AttributeSortOrderRank>
+					<er-ext:AttributeSortOrder>ascending</er-ext:AttributeSortOrder>
+				</er-ext:AttributeSortSpecification>
 			</er-ext:AttributeParameter>
 			<er-ext:AttributeParameter>
 				<er-ext:AttributeXPath>ext:PersonSearchResult/ext:Person/nc:PersonName/nc:PersonSurName</er-ext:AttributeXPath>
 				<er-ext:AttributeThresholdValue>0.5</er-ext:AttributeThresholdValue>
 				<er-ext:AttributeIsDeterminativeIndicator>false</er-ext:AttributeIsDeterminativeIndicator>
 				<er-ext:AttributeMatchAlgorithmSimmetricsURICode>urn:org:search:ers:algorithms:ss.wcohen.com.Jaro</er-ext:AttributeMatchAlgorithmSimmetricsURICode>
+				<er-ext:AttributeSortSpecification>
+					<er-ext:AttributeSortOrderRank>1</er-ext:AttributeSortOrderRank>
+					<er-ext:AttributeSortOrder>descending</er-ext:AttributeSortOrder>
+				</er-ext:AttributeSortSpecification>
 			</er-ext:AttributeParameter>
 			<er-ext:AttributeParameter>
 				<er-ext:AttributeXPath>ext:PersonSearchResult/ext:Person/jxdm:PersonAugmentation/jxdm:PersonStateFingerprintIdentification/nc:IdentificationID</er-ext:AttributeXPath>
 				<er-ext:AttributeThresholdValue>0.5</er-ext:AttributeThresholdValue>
 				<er-ext:AttributeIsDeterminativeIndicator>true</er-ext:AttributeIsDeterminativeIndicator>
 				<er-ext:AttributeMatchAlgorithmSimmetricsURICode>urn:org:search:ers:algorithms:ss.wcohen.com.Jaro</er-ext:AttributeMatchAlgorithmSimmetricsURICode>
+				<er-ext:AttributeSortSpecification>
+					<er-ext:AttributeSortOrderRank>3</er-ext:AttributeSortOrderRank>
+					<er-ext:AttributeSortOrder>ascending</er-ext:AttributeSortOrder>
+				</er-ext:AttributeSortSpecification>
 			</er-ext:AttributeParameter>
 		</er-ext:AttributeParameters>
         
@@ -55,36 +67,11 @@
             <er-ext:Entity>
                 <ext:PersonSearchResult>
                     <ext:Person>
-                        <nc:PersonAgeMeasure>
-                            <nc:MeasurePointValue>48.0</nc:MeasurePointValue>
-                        </nc:PersonAgeMeasure>
-                        <nc:PersonBirthDate>
-                            <nc:Date>1960-01-15</nc:Date>
-                        </nc:PersonBirthDate>
-                        <nc:PersonHairColorCode>BLK</nc:PersonHairColorCode>
-                        <nc:PersonHeightMeasure>
-                            <nc:MeasurePointValue>40.0</nc:MeasurePointValue>
-                            <nc:LengthUnitCode>INH</nc:LengthUnitCode>
-                        </nc:PersonHeightMeasure>
                         <nc:PersonName>
                             <nc:PersonGivenName>Minny</nc:PersonGivenName>
                             <nc:PersonSurName>Mouse</nc:PersonSurName>
                         </nc:PersonName>
-                        <nc:PersonPhysicalFeature>
-                            <nc:PhysicalFeatureDescriptionText>Tattoo of Donald Duck on Left
-                                Shoulder</nc:PhysicalFeatureDescriptionText>
-                        </nc:PersonPhysicalFeature>
-                        <nc:PersonSSNIdentification>
-                            <nc:IdentificationID>987654321</nc:IdentificationID>
-                        </nc:PersonSSNIdentification>
-                        <nc:PersonWeightMeasure>
-                            <nc:MeasurePointValue>80.0</nc:MeasurePointValue>
-                            <nc:WeightUnitCode>LBR</nc:WeightUnitCode>
-                        </nc:PersonWeightMeasure>
                         <jxdm:PersonAugmentation>
-                            <jxdm:PersonFBIIdentification>
-                                <nc:IdentificationID>99887766</nc:IdentificationID>
-                            </jxdm:PersonFBIIdentification>
                             <jxdm:PersonStateFingerprintIdentification>
                                 <nc:IdentificationID>A987654</nc:IdentificationID>
                             </jxdm:PersonStateFingerprintIdentification>
@@ -99,48 +86,20 @@
             </er-ext:Entity>
             <er-ext:Entity>
                 <ext:PersonSearchResult>
-                    <ext:Person s:id="P1">
-                        <nc:PersonBirthDate>
-                            <nc:Date>1960-01-15</nc:Date>
-                        </nc:PersonBirthDate>
+                    <ext:Person>
                         <nc:PersonName>
                             <nc:PersonGivenName>Mickey</nc:PersonGivenName>
                             <nc:PersonSurName>Mouse</nc:PersonSurName>
                         </nc:PersonName>
                         <jxdm:PersonAugmentation>
-                            <nc:DriverLicense>
-                                <nc:DriverLicenseIdentification>
-                                    <nc:IdentificationID>H12345678</nc:IdentificationID>
-                                    <nc:IdentificationSourceText>HI</nc:IdentificationSourceText>
-                                </nc:DriverLicenseIdentification>
-                            </nc:DriverLicense>
-                            <jxdm:PersonFBIIdentification>
-                                <nc:IdentificationID>12345678X9</nc:IdentificationID>
-                            </jxdm:PersonFBIIdentification>
                             <jxdm:PersonStateFingerprintIdentification>
-                                <nc:IdentificationID>A1234567</nc:IdentificationID>
+                                <nc:IdentificationID>A987653</nc:IdentificationID>
                             </jxdm:PersonStateFingerprintIdentification>
                         </jxdm:PersonAugmentation>
                     </ext:Person>
-                    <nc:Location s:id="L1">
-                        <nc:LocationAddress>
-                            <nc:StructuredAddress>
-                                <nc:LocationStreet>
-                                    <nc:StreetNumberText>1111</nc:StreetNumberText>
-                                    <nc:StreetName>Alakea</nc:StreetName>
-                                </nc:LocationStreet>
-                                <nc:LocationStateNCICRESCode>PA</nc:LocationStateNCICRESCode>
-                                <nc:LocationPostalCode>96813</nc:LocationPostalCode>
-                            </nc:StructuredAddress>
-                        </nc:LocationAddress>
-                    </nc:Location>
-                    <nc:ResidenceAssociation>
-                        <nc:PersonReference s:ref="P1" />
-                        <nc:LocationReference s:ref="L1" />
-                    </nc:ResidenceAssociation>
                     <intel:SystemIdentifier>
-                        <nc:IdentificationID>@1011031String</nc:IdentificationID>
-                        <intel:SystemName>http://local.org/Services/WSDL/Person_Search_Request_Service/Warrants/1.0}Submit-Person-Search---Warrants
+                        <nc:IdentificationID>A987653</nc:IdentificationID>
+                        <intel:SystemName>{http://local.org/Services/WSDL/Person_Search_Request_Service/Criminal_History/1.0}Submit-Person-Search---Criminal-History
                         </intel:SystemName>
                     </intel:SystemIdentifier>
                 </ext:PersonSearchResult>
@@ -148,44 +107,58 @@
             <er-ext:Entity>
                 <ext:PersonSearchResult>
                     <ext:Person>
-                        <nc:PersonAgeMeasure>
-                            <nc:MeasurePointValue>48.0</nc:MeasurePointValue>
-                        </nc:PersonAgeMeasure>
-                        <nc:PersonBirthDate>
-                            <nc:Date>1960-01-15</nc:Date>
-                        </nc:PersonBirthDate>
-                        <nc:PersonHairColorCode>BLK</nc:PersonHairColorCode>
-                        <nc:PersonHeightMeasure>
-                            <nc:MeasurePointValue>40.0</nc:MeasurePointValue>
-                            <nc:LengthUnitCode>INH</nc:LengthUnitCode>
-                        </nc:PersonHeightMeasure>
                         <nc:PersonName>
-                            <nc:PersonGivenName>Minnie</nc:PersonGivenName>
-                            <nc:PersonMiddleName>R</nc:PersonMiddleName>
+                            <nc:PersonGivenName>Mickey</nc:PersonGivenName>
                             <nc:PersonSurName>Mouse</nc:PersonSurName>
                         </nc:PersonName>
-                        <nc:PersonPhysicalFeature>
-                            <nc:PhysicalFeatureDescriptionText>Tattoo of Donald Duck on Left
-                                Shoulder</nc:PhysicalFeatureDescriptionText>
-                        </nc:PersonPhysicalFeature>
-                        <nc:PersonSSNIdentification>
-                            <nc:IdentificationID>987654321</nc:IdentificationID>
-                        </nc:PersonSSNIdentification>
-                        <nc:PersonWeightMeasure>
-                            <nc:MeasurePointValue>80.0</nc:MeasurePointValue>
-                            <nc:WeightUnitCode>LBR</nc:WeightUnitCode>
-                        </nc:PersonWeightMeasure>
                         <jxdm:PersonAugmentation>
-                            <jxdm:PersonFBIIdentification>
-                                <nc:IdentificationID>99887766</nc:IdentificationID>
-                            </jxdm:PersonFBIIdentification>
                             <jxdm:PersonStateFingerprintIdentification>
-                                <nc:IdentificationID>A987654</nc:IdentificationID>
+                                <nc:IdentificationID>A987653</nc:IdentificationID>
                             </jxdm:PersonStateFingerprintIdentification>
                         </jxdm:PersonAugmentation>
                     </ext:Person>
                     <intel:SystemIdentifier>
-                        <nc:IdentificationID>A987654</nc:IdentificationID>
+                        <nc:IdentificationID>A987653</nc:IdentificationID>
+                        <intel:SystemName>{http://local.org/Services/WSDL/Person_Search_Request_Service/Criminal_History/1.0}Submit-Person-Search---Criminal-History
+                        </intel:SystemName>
+                    </intel:SystemIdentifier>
+                </ext:PersonSearchResult>
+            </er-ext:Entity>
+            <er-ext:Entity>
+                <ext:PersonSearchResult>
+                    <ext:Person>
+                        <nc:PersonName>
+                            <nc:PersonGivenName>Micky</nc:PersonGivenName>
+                            <nc:PersonSurName>Mouse</nc:PersonSurName>
+                        </nc:PersonName>
+                        <jxdm:PersonAugmentation>
+                            <jxdm:PersonStateFingerprintIdentification>
+                                <nc:IdentificationID>A987653</nc:IdentificationID>
+                            </jxdm:PersonStateFingerprintIdentification>
+                        </jxdm:PersonAugmentation>
+                    </ext:Person>
+                    <intel:SystemIdentifier>
+                        <nc:IdentificationID>A987653</nc:IdentificationID>
+                        <intel:SystemName>{http://local.org/Services/WSDL/Person_Search_Request_Service/Criminal_History/1.0}Submit-Person-Search---Criminal-History
+                        </intel:SystemName>
+                    </intel:SystemIdentifier>
+                </ext:PersonSearchResult>
+            </er-ext:Entity>
+            <er-ext:Entity>
+                <ext:PersonSearchResult>
+                    <ext:Person>
+                        <nc:PersonName>
+                            <nc:PersonGivenName>Donald</nc:PersonGivenName>
+                            <nc:PersonSurName>Duck</nc:PersonSurName>
+                        </nc:PersonName>
+                        <jxdm:PersonAugmentation>
+                            <jxdm:PersonStateFingerprintIdentification>
+                                <nc:IdentificationID>A987652</nc:IdentificationID>
+                            </jxdm:PersonStateFingerprintIdentification>
+                        </jxdm:PersonAugmentation>
+                    </ext:Person>
+                    <intel:SystemIdentifier>
+                        <nc:IdentificationID>A987652</nc:IdentificationID>
                         <intel:SystemName>{http://local.org/Services/WSDL/Person_Search_Request_Service/Criminal_History/1.0}Submit-Person-Search---Criminal-History
                         </intel:SystemName>
                     </intel:SystemIdentifier>
