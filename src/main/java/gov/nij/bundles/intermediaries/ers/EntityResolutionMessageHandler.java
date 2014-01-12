@@ -146,7 +146,7 @@ public class EntityResolutionMessageHandler {
             }
         }
 
-        EntityResolutionResults results = entityResolutionService.resolveEntities(records, attributeParameters, recordLimit);
+        EntityResolutionResults results = (records.size() <= recordLimit) ? entityResolutionService.resolveEntities(records, attributeParameters, recordLimit) : null;
         Document resultDocument = createResponseMessage(entityContainerNode, results, attributeParametersNode, recordLimit);
         // without this next line, we get an exception about an unbound namespace URI (NIEM structures)
         resultDocument.normalizeDocument();
@@ -297,8 +297,6 @@ public class EntityResolutionMessageHandler {
      */
     private Document createResponseMessage(Node entityContainerNode, EntityResolutionResults results, Node attributeParametersNode, int recordLimit) throws Exception {
 
-        List<RecordWrapper> records = results.getRecords();
-
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         dbf.setNamespaceAware(true);
 
@@ -324,7 +322,6 @@ public class EntityResolutionMessageHandler {
         }
 
         for (Element e : inputEntityElements) {
-            XmlConverter converter = new XmlConverter();
             Node clone = resultDocument.adoptNode(e.cloneNode(true));
             resultDocument.renameNode(clone, EntityResolutionNamespaceContext.MERGE_RESULT_EXT_NAMESPACE, e.getLocalName());
             entityContainerElement.appendChild(clone);
@@ -333,60 +330,101 @@ public class EntityResolutionMessageHandler {
         Element mergedRecordsElement = resultDocument.createElementNS(EntityResolutionNamespaceContext.MERGE_RESULT_NAMESPACE, "MergedRecords");
         entityMergeResultMessageElement.appendChild(mergedRecordsElement);
 
-        // Loop through RecordWrappers to extract info to create merged records
-        for (RecordWrapper record : records) {
-            LOG.debug("  !#!#!#!# Record 1, id=" + record.getExternalId() + ", externals=" + record.getRelatedIds());
+        if (results != null) {
 
-            // Create Merged Record Container
-            Element mergedRecordElement = resultDocument.createElementNS(EntityResolutionNamespaceContext.MERGE_RESULT_EXT_NAMESPACE, "MergedRecord");
-            mergedRecordsElement.appendChild(mergedRecordElement);
+            List<RecordWrapper> records = results.getRecords();
 
-            // Create Original Record Reference for 'first record'
-            Element originalRecordRefElement = resultDocument.createElementNS(EntityResolutionNamespaceContext.MERGE_RESULT_EXT_NAMESPACE, "OriginalRecordReference");
-            originalRecordRefElement.setAttributeNS(EntityResolutionNamespaceContext.STRUCTURES_NAMESPACE, "ref", record.getExternalId());
-            mergedRecordElement.appendChild(originalRecordRefElement);
+            // Loop through RecordWrappers to extract info to create merged records
+            for (RecordWrapper record : records) {
+                LOG.debug("  !#!#!#!# Record 1, id=" + record.getExternalId() + ", externals=" + record.getRelatedIds());
 
-            // Loop through and add any related records
-            for (String relatedRecordId : record.getRelatedIds()) {
-                originalRecordRefElement = resultDocument.createElementNS(EntityResolutionNamespaceContext.MERGE_RESULT_EXT_NAMESPACE, "OriginalRecordReference");
-                originalRecordRefElement.setAttributeNS(EntityResolutionNamespaceContext.STRUCTURES_NAMESPACE, "ref", relatedRecordId);
+                // Create Merged Record Container
+                Element mergedRecordElement = resultDocument.createElementNS(EntityResolutionNamespaceContext.MERGE_RESULT_EXT_NAMESPACE, "MergedRecord");
+                mergedRecordsElement.appendChild(mergedRecordElement);
+
+                // Create Original Record Reference for 'first record'
+                Element originalRecordRefElement = resultDocument.createElementNS(EntityResolutionNamespaceContext.MERGE_RESULT_EXT_NAMESPACE, "OriginalRecordReference");
+                originalRecordRefElement.setAttributeNS(EntityResolutionNamespaceContext.STRUCTURES_NAMESPACE, "ref", record.getExternalId());
                 mergedRecordElement.appendChild(originalRecordRefElement);
-            }
 
-            // Create Merge Quality Element
-            Element mergeQualityElement = resultDocument.createElementNS(EntityResolutionNamespaceContext.MERGE_RESULT_EXT_NAMESPACE, "MergeQuality");
-            mergedRecordElement.appendChild(mergeQualityElement);
-            Set<AttributeStatistics> stats = results.getStatisticsForRecord(record.getExternalId());
-            for (AttributeStatistics stat : stats) {
-                Element stringDistanceStatsElement = resultDocument.createElementNS(EntityResolutionNamespaceContext.MERGE_RESULT_EXT_NAMESPACE, "StringDistanceStatistics");
-                mergeQualityElement.appendChild(stringDistanceStatsElement);
-                Element xpathElement = resultDocument.createElementNS(EntityResolutionNamespaceContext.MERGE_RESULT_EXT_NAMESPACE, "AttributeXPath");
-                stringDistanceStatsElement.appendChild(xpathElement);
-                Node contentNode = resultDocument.createTextNode(stat.getAttributeName());
-                xpathElement.appendChild(contentNode);
-                Element meanElement = resultDocument.createElementNS(EntityResolutionNamespaceContext.MERGE_RESULT_EXT_NAMESPACE, "StringDistanceMeanInRecord");
-                stringDistanceStatsElement.appendChild(meanElement);
-                contentNode = resultDocument.createTextNode(String.valueOf(stat.getAverageStringDistance()));
-                meanElement.appendChild(contentNode);
-                Element sdElement = resultDocument.createElementNS(EntityResolutionNamespaceContext.MERGE_RESULT_EXT_NAMESPACE, "StringDistanceStandardDeviationInRecord");
-                stringDistanceStatsElement.appendChild(sdElement);
-                contentNode = resultDocument.createTextNode(String.valueOf(stat.getStandardDeviationStringDistance()));
-                sdElement.appendChild(contentNode);
+                // Loop through and add any related records
+                for (String relatedRecordId : record.getRelatedIds()) {
+                    originalRecordRefElement = resultDocument.createElementNS(EntityResolutionNamespaceContext.MERGE_RESULT_EXT_NAMESPACE, "OriginalRecordReference");
+                    originalRecordRefElement.setAttributeNS(EntityResolutionNamespaceContext.STRUCTURES_NAMESPACE, "ref", relatedRecordId);
+                    mergedRecordElement.appendChild(originalRecordRefElement);
+                }
+
+                // Create Merge Quality Element
+                Element mergeQualityElement = resultDocument.createElementNS(EntityResolutionNamespaceContext.MERGE_RESULT_EXT_NAMESPACE, "MergeQuality");
+                mergedRecordElement.appendChild(mergeQualityElement);
+                Set<AttributeStatistics> stats = results.getStatisticsForRecord(record.getExternalId());
+                for (AttributeStatistics stat : stats) {
+                    Element stringDistanceStatsElement = resultDocument.createElementNS(EntityResolutionNamespaceContext.MERGE_RESULT_EXT_NAMESPACE, "StringDistanceStatistics");
+                    mergeQualityElement.appendChild(stringDistanceStatsElement);
+                    Element xpathElement = resultDocument.createElementNS(EntityResolutionNamespaceContext.MERGE_RESULT_EXT_NAMESPACE, "AttributeXPath");
+                    stringDistanceStatsElement.appendChild(xpathElement);
+                    Node contentNode = resultDocument.createTextNode(stat.getAttributeName());
+                    xpathElement.appendChild(contentNode);
+                    Element meanElement = resultDocument.createElementNS(EntityResolutionNamespaceContext.MERGE_RESULT_EXT_NAMESPACE, "StringDistanceMeanInRecord");
+                    stringDistanceStatsElement.appendChild(meanElement);
+                    contentNode = resultDocument.createTextNode(String.valueOf(stat.getAverageStringDistance()));
+                    meanElement.appendChild(contentNode);
+                    Element sdElement = resultDocument.createElementNS(EntityResolutionNamespaceContext.MERGE_RESULT_EXT_NAMESPACE, "StringDistanceStandardDeviationInRecord");
+                    stringDistanceStatsElement.appendChild(sdElement);
+                    contentNode = resultDocument.createTextNode(String.valueOf(stat.getStandardDeviationStringDistance()));
+                    sdElement.appendChild(contentNode);
+
+                }
+            }
+            
+        } else {
+            
+            for (Element e : inputEntityElements) {
+                
+                String id = e.getAttributeNS(EntityResolutionNamespaceContext.STRUCTURES_NAMESPACE, "id");
+                
+                Element mergedRecordElement = resultDocument.createElementNS(EntityResolutionNamespaceContext.MERGE_RESULT_EXT_NAMESPACE, "MergedRecord");
+                mergedRecordsElement.appendChild(mergedRecordElement);
+
+                Element originalRecordRefElement = resultDocument.createElementNS(EntityResolutionNamespaceContext.MERGE_RESULT_EXT_NAMESPACE, "OriginalRecordReference");
+                originalRecordRefElement.setAttributeNS(EntityResolutionNamespaceContext.STRUCTURES_NAMESPACE, "ref", id);
+                mergedRecordElement.appendChild(originalRecordRefElement);
+                
+                Element mergeQualityElement = resultDocument.createElementNS(EntityResolutionNamespaceContext.MERGE_RESULT_EXT_NAMESPACE, "MergeQuality");
+                mergedRecordElement.appendChild(mergeQualityElement);
+                XPath xp = XPathFactory.newInstance().newXPath();
+                xp.setNamespaceContext(new EntityResolutionNamespaceContext());
+                NodeList attributeParameterNodes = (NodeList) xp.evaluate("er-ext:AttributeParameter", attributeParametersNode, XPathConstants.NODESET);
+                for (int i = 0; i < attributeParameterNodes.getLength(); i++) {
+                    String attributeName = xp.evaluate("er-ext:AttributeXPath", attributeParametersNode);
+                    Element stringDistanceStatsElement = resultDocument.createElementNS(EntityResolutionNamespaceContext.MERGE_RESULT_EXT_NAMESPACE, "StringDistanceStatistics");
+                    mergeQualityElement.appendChild(stringDistanceStatsElement);
+                    Element xpathElement = resultDocument.createElementNS(EntityResolutionNamespaceContext.MERGE_RESULT_EXT_NAMESPACE, "AttributeXPath");
+                    stringDistanceStatsElement.appendChild(xpathElement);
+                    Node contentNode = resultDocument.createTextNode(attributeName);
+                    xpathElement.appendChild(contentNode);
+                    Element meanElement = resultDocument.createElementNS(EntityResolutionNamespaceContext.MERGE_RESULT_EXT_NAMESPACE, "StringDistanceMeanInRecord");
+                    stringDistanceStatsElement.appendChild(meanElement);
+                    contentNode = resultDocument.createTextNode("0.0");
+                    meanElement.appendChild(contentNode);
+                    Element sdElement = resultDocument.createElementNS(EntityResolutionNamespaceContext.MERGE_RESULT_EXT_NAMESPACE, "StringDistanceStandardDeviationInRecord");
+                    stringDistanceStatsElement.appendChild(sdElement);
+                    contentNode = resultDocument.createTextNode("0.0");
+                    sdElement.appendChild(contentNode);
+                }
 
             }
+            
         }
 
         Element recordLimitExceededElement = resultDocument.createElementNS(EntityResolutionNamespaceContext.MERGE_RESULT_NAMESPACE, "RecordLimitExceeded");
-        recordLimitExceededElement.setTextContent(new Boolean(results.isRecordLimitExceeded()).toString());
+        recordLimitExceededElement.setTextContent(new Boolean(results == null).toString());
         entityMergeResultMessageElement.appendChild(recordLimitExceededElement);
 
         return resultDocument;
 
     }
 
-    /**
-     * This is used in testing to allow the attribute parameters to be read from a static file
-     */
     void setAttributeParametersStream(InputStream attributeParametersStream) throws Exception {
         XmlConverter xmlConverter = new XmlConverter();
         xmlConverter.getDocumentBuilderFactory().setNamespaceAware(true);
@@ -408,6 +446,14 @@ public class EntityResolutionMessageHandler {
             InputStream is = this.getClass().getResourceAsStream(attributeParametersURL);
             setAttributeParametersStream(is);
         }
+    }
+    
+    /**
+     * Returns the attribute parameters document with which this processor has been configured, or null if not configured with one
+     * @return the attribute parameters
+     */
+    public Document getAttributeParametersDocument() {
+        return attributeParametersDocument;
     }
 
     private static final class EntityElementComparator implements Comparator<Element> {

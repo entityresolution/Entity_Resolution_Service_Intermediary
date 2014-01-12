@@ -55,14 +55,15 @@ public class EntityResolutionMessageHandlerTest extends TestCase {
     private static final Log LOG = LogFactory.getLog(EntityResolutionMessageHandlerTest.class);
 
     private EntityResolutionMessageHandler entityResolutionMessageHandler;
-    InputStream testRequestMessageInputStream;
+    private InputStream testRequestMessageInputStream;
+    private InputStream testAttributeParametersMessageInputStream;
 
     @Before
     public void setUp() throws Exception {
         entityResolutionMessageHandler = new EntityResolutionMessageHandler();
-        InputStream attributeParametersStream = getClass().getResourceAsStream("/xml/TestAttributeParameters.xml");
-        assertNotNull(attributeParametersStream);
-        entityResolutionMessageHandler.setAttributeParametersStream(attributeParametersStream);
+        testAttributeParametersMessageInputStream = getClass().getResourceAsStream("/xml/TestAttributeParameters.xml");
+        assertNotNull(testAttributeParametersMessageInputStream);
+        entityResolutionMessageHandler.setAttributeParametersStream(testAttributeParametersMessageInputStream);
         testRequestMessageInputStream = getClass().getResourceAsStream("/xml/EntityMergeRequestMessage.xml");
         assertNotNull(testRequestMessageInputStream);
     }
@@ -163,7 +164,8 @@ public class EntityResolutionMessageHandlerTest extends TestCase {
         
         entityResolutionConfigurationNode = makeEntityResolutionConfigurationNode(2+"");
 
-        resultDocument = entityResolutionMessageHandler.performEntityResolution(entityContainerNode, null, entityResolutionConfigurationNode);
+        Document attributeParametersDocument = entityResolutionMessageHandler.getAttributeParametersDocument();
+        resultDocument = entityResolutionMessageHandler.performEntityResolution(entityContainerNode, attributeParametersDocument.getDocumentElement(), entityResolutionConfigurationNode);
 
         xp.setNamespaceContext(new EntityResolutionNamespaceContext());
         entityNodes = (NodeList) xp.evaluate("//merge-result:EntityContainer/merge-result-ext:Entity", resultDocument, XPathConstants.NODESET);
@@ -174,6 +176,17 @@ public class EntityResolutionMessageHandlerTest extends TestCase {
         recordLimitExceeded = xp.evaluate("/merge-result:EntityMergeResultMessage/merge-result:RecordLimitExceeded", resultDocument);
         assertEquals("true", recordLimitExceeded);
         
+        //LOG.info(new XmlConverter().toString(resultDocument));
+        NodeList statNodes = (NodeList) xp.evaluate("//merge-result-ext:MergedRecord/merge-result-ext:MergeQuality", resultDocument, XPathConstants.NODESET);
+        assertEquals(3, statNodes.getLength());
+        statNodes = (NodeList) xp.evaluate("//merge-result-ext:MergedRecord/merge-result-ext:MergeQuality/merge-result-ext:StringDistanceStatistics", resultDocument, XPathConstants.NODESET);
+        assertEquals(6, statNodes.getLength());
+        statNodes = (NodeList) xp.evaluate("//merge-result-ext:MergedRecord/merge-result-ext:MergeQuality/merge-result-ext:StringDistanceStatistics/merge-result-ext:AttributeXPath", resultDocument, XPathConstants.NODESET);
+        assertEquals(6, statNodes.getLength());
+        statNodes = (NodeList) xp.evaluate("//merge-result-ext:MergedRecord/merge-result-ext:MergeQuality/merge-result-ext:StringDistanceStatistics/merge-result-ext:StringDistanceMeanInRecord", resultDocument, XPathConstants.NODESET);
+        assertEquals(6, statNodes.getLength());
+        statNodes = (NodeList) xp.evaluate("//merge-result-ext:MergedRecord/merge-result-ext:MergeQuality/merge-result-ext:StringDistanceStatistics/merge-result-ext:StringDistanceStandardDeviationInRecord", resultDocument, XPathConstants.NODESET);
+        assertEquals(6, statNodes.getLength());
     }
 
     private Node makeEntityResolutionConfigurationNode(String limit) throws Exception {
