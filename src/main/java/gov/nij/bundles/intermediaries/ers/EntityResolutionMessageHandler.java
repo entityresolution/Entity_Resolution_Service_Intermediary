@@ -119,8 +119,6 @@ public class EntityResolutionMessageHandler {
     Document performEntityResolution(Node entityContainerNode, Node attributeParametersNode, Node entityResolutionConfigurationNode) throws Exception, ParserConfigurationException,
             XPathExpressionException, TransformerException {
         Set<AttributeParametersXpathSupport> attributeParametersXpathSupport = getAttributeParameters(attributeParametersNode);
-        List<RecordWrapper> records = createRecordsFromRequestMessage(entityContainerNode, attributeParametersNode);
-        LOG.debug("before resolveEntities, records=" + records);
 
         // We can't call the ER OSGi service with AttributeParametersXpathSupport Set
         // so we create an attributeParameters Set to call it with.
@@ -145,8 +143,16 @@ public class EntityResolutionMessageHandler {
                 LOG.debug("Record limit value " + recordLimitString + " does not parse as an integer, will not set a record limit");
             }
         }
+        
+        EntityResolutionResults results = null;
+        NodeList entityNodeList = (NodeList) xpath.evaluate("er-ext:Entity", entityContainerNode, XPathConstants.NODESET);
+        
+        if (entityNodeList.getLength() <= recordLimit) {
+            List<RecordWrapper> records = createRecordsFromRequestMessage(entityNodeList, attributeParametersNode);
+            LOG.debug("before resolveEntities, records=" + records);
+            results = entityResolutionService.resolveEntities(records, attributeParameters, recordLimit);
+        }
 
-        EntityResolutionResults results = (records.size() <= recordLimit) ? entityResolutionService.resolveEntities(records, attributeParameters, recordLimit) : null;
         Document resultDocument = createResponseMessage(entityContainerNode, results, attributeParametersNode, recordLimit);
         // without this next line, we get an exception about an unbound namespace URI (NIEM structures)
         resultDocument.normalizeDocument();
@@ -217,9 +223,7 @@ public class EntityResolutionMessageHandler {
      * @throws Exception
      */
 
-    List<RecordWrapper> createRecordsFromRequestMessage(Node entityContainerNode, Node attributeParametersNode) throws Exception {
-
-        NodeList entityNodeList = (NodeList) xpath.evaluate("er-ext:Entity", entityContainerNode, XPathConstants.NODESET);
+    List<RecordWrapper> createRecordsFromRequestMessage(NodeList entityNodeList, Node attributeParametersNode) throws Exception {
 
         List<RecordWrapper> records = new ArrayList<RecordWrapper>();
 

@@ -273,9 +273,11 @@ public class EntityResolutionMessageHandlerTest extends TestCase {
         assertNotNull(testRequestMessage);
 
         Node entityContainerNode = testRequestMessage.getElementsByTagNameNS(EntityResolutionNamespaceContext.ER_EXT_NAMESPACE, "EntityContainer").item(0);
+        NodeList entityNodeList = ((Element) entityContainerNode).getElementsByTagNameNS(EntityResolutionNamespaceContext.ER_EXT_NAMESPACE, "Entity");
         assertNotNull(entityContainerNode);
+        assertNotNull(entityNodeList);
 
-        List<ExternallyIdentifiableRecord> records = EntityResolutionConversionUtils.convertRecordWrappers(entityResolutionMessageHandler.createRecordsFromRequestMessage(entityContainerNode, null));
+        List<ExternallyIdentifiableRecord> records = EntityResolutionConversionUtils.convertRecordWrappers(entityResolutionMessageHandler.createRecordsFromRequestMessage(entityNodeList, null));
 
         assertNotNull(records);
         assertEquals(3, records.size());
@@ -325,7 +327,8 @@ public class EntityResolutionMessageHandlerTest extends TestCase {
         Node entityContainerNode = testRequestMessage.getElementsByTagNameNS(EntityResolutionNamespaceContext.ER_EXT_NAMESPACE, "EntityContainer").item(0);
         assertNotNull(entityContainerNode);
 
-        List<RecordWrapper> records = entityResolutionMessageHandler.createRecordsFromRequestMessage(entityContainerNode, null);
+        NodeList entityNodeList = ((Element) entityContainerNode).getElementsByTagNameNS(EntityResolutionNamespaceContext.ER_EXT_NAMESPACE, "Entity");
+        List<RecordWrapper> records = entityResolutionMessageHandler.createRecordsFromRequestMessage(entityNodeList, null);
         assertEquals(expectedInitialEntityCount + recordIncrement, records.size());
     }
 }
