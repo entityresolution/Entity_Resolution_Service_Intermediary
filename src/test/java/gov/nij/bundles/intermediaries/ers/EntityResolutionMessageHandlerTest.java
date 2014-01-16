@@ -224,6 +224,64 @@ public class EntityResolutionMessageHandlerTest extends TestCase {
         assertEquals(12, statNodes.getLength());
     }
 
+    /**
+     * This unit test will read a entity merge request document that has given and sur names in mixed case.
+     * It will then set an ER threshold of 3 and pass in six entities so ER is skipped.
+     * However, the results should still be sorted and passed back in order.
+     * 
+     * @throws Exception
+     */
+    
+    @Test
+    public void testRecordLimitSorting() throws Exception {
+
+        XmlConverter converter = new XmlConverter();
+        converter.getDocumentBuilderFactory().setNamespaceAware(true);
+        Document testRequestMessage = converter.toDOMDocument(getClass().getResourceAsStream("/xml/EntityMergeRequestMessageMixedCase.xml"));
+
+        Node entityContainerNode = testRequestMessage.getElementsByTagNameNS(EntityResolutionNamespaceContext.ER_EXT_NAMESPACE, "EntityContainer").item(0);
+        assertNotNull(entityContainerNode);
+
+        Node entityResolutionConfigurationNode = makeEntityResolutionConfigurationNode("2");
+
+        Document attributeParametersDocument = entityResolutionMessageHandler.getAttributeParametersDocument();
+        
+        Document resultDocument = entityResolutionMessageHandler.performEntityResolution(entityContainerNode, attributeParametersDocument.getDocumentElement(), entityResolutionConfigurationNode);
+
+        XPath xp = XPathFactory.newInstance().newXPath();
+        xp.setNamespaceContext(testNamespaceContext);
+        NodeList entityNodes = (NodeList) xp.evaluate("//merge-result:EntityContainer/merge-result-ext:Entity", resultDocument, XPathConstants.NODESET);
+        int inputEntityNodeCount = 6;
+        assertEquals(inputEntityNodeCount, entityNodes.getLength());
+        entityNodes = (NodeList) xp.evaluate("//merge-result-ext:MergedRecord", resultDocument, XPathConstants.NODESET);
+        assertEquals(6, entityNodes.getLength());
+        String recordLimitExceeded = xp.evaluate("/merge-result:EntityMergeResultMessage/merge-result:RecordLimitExceeded", resultDocument);
+        assertEquals("true", recordLimitExceeded);
+
+        assertEquals("DUCK", xp.evaluate("//merge-result:EntityContainer/merge-result-ext:Entity[1]/ext:PersonSearchResult/ext:Person/nc:PersonName/nc:PersonSurName", resultDocument));
+        assertEquals("Donald", xp.evaluate("//merge-result:EntityContainer/merge-result-ext:Entity[1]/ext:PersonSearchResult/ext:Person/nc:PersonName/nc:PersonGivenName", resultDocument));
+        
+        assertEquals("MOUSE", xp.evaluate("//merge-result:EntityContainer/merge-result-ext:Entity[2]/ext:PersonSearchResult/ext:Person/nc:PersonName/nc:PersonSurName", resultDocument));
+        assertEquals("FRANK", xp.evaluate("//merge-result:EntityContainer/merge-result-ext:Entity[2]/ext:PersonSearchResult/ext:Person/nc:PersonName/nc:PersonGivenName", resultDocument));
+
+        assertEquals("mouse", xp.evaluate("//merge-result:EntityContainer/merge-result-ext:Entity[3]/ext:PersonSearchResult/ext:Person/nc:PersonName/nc:PersonSurName", resultDocument));
+        assertEquals("macky", xp.evaluate("//merge-result:EntityContainer/merge-result-ext:Entity[3]/ext:PersonSearchResult/ext:Person/nc:PersonName/nc:PersonGivenName", resultDocument));
+
+        assertEquals("MouSe", xp.evaluate("//merge-result:EntityContainer/merge-result-ext:Entity[4]/ext:PersonSearchResult/ext:Person/nc:PersonName/nc:PersonSurName", resultDocument));
+        assertEquals("Mickey", xp.evaluate("//merge-result:EntityContainer/merge-result-ext:Entity[4]/ext:PersonSearchResult/ext:Person/nc:PersonName/nc:PersonGivenName", resultDocument));
+
+        assertEquals("MOUSE", xp.evaluate("//merge-result:EntityContainer/merge-result-ext:Entity[5]/ext:PersonSearchResult/ext:Person/nc:PersonName/nc:PersonSurName", resultDocument));
+        assertEquals("Minn", xp.evaluate("//merge-result:EntityContainer/merge-result-ext:Entity[5]/ext:PersonSearchResult/ext:Person/nc:PersonName/nc:PersonGivenName", resultDocument));
+        
+        assertEquals("Mouse", xp.evaluate("//merge-result:EntityContainer/merge-result-ext:Entity[6]/ext:PersonSearchResult/ext:Person/nc:PersonName/nc:PersonSurName", resultDocument));
+        assertEquals("MINNY", xp.evaluate("//merge-result:EntityContainer/merge-result-ext:Entity[6]/ext:PersonSearchResult/ext:Person/nc:PersonName/nc:PersonGivenName", resultDocument));
+
+        //LOG.info(new XmlConverter().toString(resultDocument));
+
+    }
+
+    
+    
     private Node makeEntityResolutionConfigurationNode(String limit) throws Exception {
         try {
             if (Integer.parseInt(limit) == Integer.MAX_VALUE) {

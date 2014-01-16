@@ -25,6 +25,10 @@
 		<er-ext:AttributeThresholdValue>0.8</er-ext:AttributeThresholdValue>
 		<er-ext:AttributeIsDeterminativeIndicator>false</er-ext:AttributeIsDeterminativeIndicator>
 		<er-ext:AttributeMatchAlgorithmSimmetricsURICode>urn:org:search:ers:algorithms:ss.wcohen.com.Jaro</er-ext:AttributeMatchAlgorithmSimmetricsURICode>
+		<er-ext:AttributeSortSpecification>
+			<er-ext:AttributeSortOrderRank>2</er-ext:AttributeSortOrderRank>
+			<er-ext:AttributeSortOrder>ascending</er-ext:AttributeSortOrder>
+		</er-ext:AttributeSortSpecification>
 	</er-ext:AttributeParameter>
 	<er-ext:AttributeParameter>
 		<er-ext:AttributeXPath>ext:PersonSearchResult/ext:Person/nc:PersonName/nc:PersonSurName</er-ext:AttributeXPath>
