@@ -499,9 +499,9 @@ public class EntityResolutionMessageHandler {
                     String v1 = null;
                     String v2 = null;
                     try {
-                        v1 = sos.xpath.stringValueOf(e1);
+                        v1 = sos.xpath.stringValueOf(e1).toLowerCase();
                         //LOG.info("v1=" + v1);
-                        v2 = sos.xpath.stringValueOf(e2);
+                        v2 = sos.xpath.stringValueOf(e2).toLowerCase();
                         //LOG.info("v2=" + v2);
                     } catch (Exception e) {
                         throw new RuntimeException(e);
