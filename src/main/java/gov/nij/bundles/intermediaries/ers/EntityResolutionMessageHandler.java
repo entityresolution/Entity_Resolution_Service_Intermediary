@@ -31,6 +31,7 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -38,6 +39,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -55,10 +57,13 @@ import org.apache.camel.converter.jaxp.XmlConverter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.cxf.common.util.StringUtils;
+import org.jaxen.dom.DOMXPath;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import com.google.common.collect.TreeMultiset;
 
 /**
  * This class bridges the Camel Route to the Entity Resolution OSGi bundle. It is responsible for processing attribute parameters either from a static configuration file or from the inbound message
@@ -311,18 +316,27 @@ public class EntityResolutionMessageHandler {
 
         Element entityContainerElement = resultDocument.createElementNS(EntityResolutionNamespaceContext.MERGE_RESULT_NAMESPACE, "EntityContainer");
         entityMergeResultMessageElement.appendChild(entityContainerElement);
-
-        List<Element> inputEntityElements = new ArrayList<Element>();
+        
         NodeList inputEntityNodes = (NodeList) xpath.evaluate("er-ext:Entity", entityContainerNode, XPathConstants.NODESET);
+        Collection<Element> inputEntityElements = null;
+        if (attributeParametersNode == null) {
+            inputEntityElements = new ArrayList<Element>();
+        } else {
+            inputEntityElements = TreeMultiset.create(new EntityElementComparator((Element) attributeParametersNode));
+            //inputEntityElements = new ArrayList<Element>();
+        }
 
         for (int i = 0; i < inputEntityNodes.getLength(); i++) {
             inputEntityElements.add((Element) inputEntityNodes.item(i));
         }
 
-        if (attributeParametersNode != null) {
-            Collections.sort(inputEntityElements, new EntityElementComparator((Element) attributeParametersNode));
-        } else {
-            LOG.warn("Attribute Parameters element was null");
+        if (attributeParametersNode == null) {
+            LOG.warn("Attribute Parameters element was null, so records will not be sorted");
+        }
+        //Collections.sort((List<Element>) inputEntityElements, new EntityElementComparator((Element) attributeParametersNode));
+        
+        if (inputEntityElements.size() != inputEntityNodes.getLength()) {
+            LOG.error("Lost elements in ER output sorting.  Input count=" + inputEntityNodes.getLength() + ", output count=" + inputEntityElements.size());
         }
 
         for (Element e : inputEntityElements) {
@@ -485,22 +499,30 @@ public class EntityResolutionMessageHandler {
                     String v1 = null;
                     String v2 = null;
                     try {
-                        v1 = sos.xpath.evaluate(e1);
-                        v2 = sos.xpath.evaluate(e2);
+                        v1 = sos.xpath.stringValueOf(e1);
+                        //LOG.info("v1=" + v1);
+                        v2 = sos.xpath.stringValueOf(e2);
+                        //LOG.info("v2=" + v2);
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
                     if (!((v1 == null && v2 == null) || (v1.equals(v2)))) {
-                        return v1.compareTo(v2) * sos.factor;
+                        final int ret = v1.compareTo(v2) * sos.factor;
+                        //LOG.info("returning " + ret);
+                        return ret;
                     }
                 }
             }
-            return 0;
+            // we don't want to return zero here, because the set will think they are the same object.  but because we're not sorting anymore, it doesn't matter
+            // what order they're in...
+            int ret = e1.hashCode() - e2.hashCode();
+            //LOG.info("Returning " + ret);
+            return ret;
         }
 
         private static final class SortOrderSpecification implements Comparable<SortOrderSpecification> {
 
-            public XPathExpression xpath;
+            public org.jaxen.XPath xpath;
             public int rank;
             public int factor;
 
@@ -516,8 +538,15 @@ public class EntityResolutionMessageHandler {
                         ret.rank = new Integer(rankS);
                         String factorS = xp.evaluate("er-ext:AttributeSortSpecification/er-ext:AttributeSortOrder", attributeParameterElement);
                         Map<String, String> namespaceMap = EntityResolutionNamespaceContextHelpers.returnNamespaceMapFromNode(attributeName, attributeParameterElement);
-                        xp.setNamespaceContext(new EntityResolutionNamespaceContextMapImpl(namespaceMap));
-                        ret.xpath = xp.compile(attributeName);
+                        final EntityResolutionNamespaceContextMapImpl nsContext = new EntityResolutionNamespaceContextMapImpl(namespaceMap);
+                        xp.setNamespaceContext(nsContext);
+                        ret.xpath = new DOMXPath(attributeName); // xp.compile(attributeName);
+                        ret.xpath.setNamespaceContext(new org.jaxen.NamespaceContext() {
+                            @Override
+                            public String translateNamespacePrefixToUri(String prefix) {
+                                return nsContext.getNamespaceURI(prefix);
+                            }
+                        });
                         if (factorS == null || "ASCENDING".equals(factorS.toUpperCase())) {
                             ret.factor = 1;
                         } else if ("DESCENDING".equals(factorS.toUpperCase())) {

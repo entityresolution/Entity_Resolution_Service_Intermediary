@@ -184,6 +184,7 @@ public class EntityResolutionServiceIntermediaryTest {
     }
 
     private void performSortTest(File inputMessageFile, int factor1, int factor2, int factor3) throws Exception {
+        
         senderExchange.getIn().setBody(inputMessageFile);
         Exchange returnExchange = template.send("direct:entityResolutionRequestServiceEndpoint", senderExchange);
 
@@ -197,12 +198,9 @@ public class EntityResolutionServiceIntermediaryTest {
         entityResolutionResponseMock.expectedMessageCount(1);
 
         Exchange ex = entityResolutionResponseMock.getExchanges().get(0);
-        // String actualResponse = ex.getIn().getBody(String.class);
-        // log.info("Body recieved by Mock: " + actualResponse);
         Document responseDocument = ex.getIn().getBody(Document.class);
-        //XmlConverter converter = new XmlConverter();
-        //String docString = converter.toString(responseDocument, ex);
-        //log.info("\n" + docString + "\n");
+//        String docString = new XmlConverter().toString(responseDocument, ex);
+//        log.info("\n" + docString + "\n");
 
         XPath xp = XPathFactory.newInstance().newXPath();
         xp.setNamespaceContext(testNamespaceContext);
@@ -319,7 +317,8 @@ public class EntityResolutionServiceIntermediaryTest {
 
         // Get the actual response
         Document actualResponse = ex.getIn().getBody(Document.class);
-        //log.info("Body recieved by Mock: " + new XmlConverter().toString(actualResponse));
+        log.info("Input document: " + new XmlConverter().toString(inputDocument));
+        log.info("Body recieved by Mock: " + new XmlConverter().toString(actualResponse));
 
         XPath xp = XPathFactory.newInstance().newXPath();
         xp.setNamespaceContext(testNamespaceContext);
@@ -341,6 +340,7 @@ public class EntityResolutionServiceIntermediaryTest {
             String inputFirstName = xp.evaluate("nc:PersonName/nc:PersonGivenName/text()", inputPersonNodes.item(i));
             if (inputFirstName != null) {
                 String xpathExpression = "//ext:Person[nc:PersonName/nc:PersonGivenName/text()='" + inputFirstName + "']";
+                log.info("xpathExpression=" + xpathExpression);
                 assertNotNull(xp.evaluate(xpathExpression, actualResponse, XPathConstants.NODE));
             }
             String inputId = xp.evaluate("jxdm:PersonAugmentation/jxdm:PersonStateFingerprintIdentification/nc:IdentificationID", inputPersonNodes.item(i));
