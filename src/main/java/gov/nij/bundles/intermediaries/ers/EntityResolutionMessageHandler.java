@@ -435,7 +435,7 @@ public class EntityResolutionMessageHandler {
             
         }
 
-        Element recordLimitExceededElement = resultDocument.createElementNS(EntityResolutionNamespaceContext.MERGE_RESULT_NAMESPACE, "RecordLimitExceeded");
+        Element recordLimitExceededElement = resultDocument.createElementNS(EntityResolutionNamespaceContext.MERGE_RESULT_NAMESPACE, "RecordLimitExceededIndicator");
         recordLimitExceededElement.setTextContent(new Boolean(results == null).toString());
         entityMergeResultMessageElement.appendChild(recordLimitExceededElement);
 

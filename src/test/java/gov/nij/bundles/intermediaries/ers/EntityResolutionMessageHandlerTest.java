@@ -151,7 +151,7 @@ public class EntityResolutionMessageHandlerTest extends TestCase {
         assertEquals(inputEntityNodeCount, entityNodes.getLength());
         entityNodes = (NodeList) xp.evaluate("//merge-result-ext:MergedRecord", resultDocument, XPathConstants.NODESET);
         assertEquals(3, entityNodes.getLength());
-        String recordLimitExceeded = xp.evaluate("/merge-result:EntityMergeResultMessage/merge-result:RecordLimitExceeded", resultDocument);
+        String recordLimitExceeded = xp.evaluate("/merge-result:EntityMergeResultMessage/merge-result:RecordLimitExceededIndicator", resultDocument);
         assertEquals("false", recordLimitExceeded);
 
         entityResolutionConfigurationNode = makeEntityResolutionConfigurationNode(6 + "");
@@ -164,7 +164,7 @@ public class EntityResolutionMessageHandlerTest extends TestCase {
         assertEquals(inputEntityNodeCount, entityNodes.getLength());
         entityNodes = (NodeList) xp.evaluate("//merge-result-ext:MergedRecord", resultDocument, XPathConstants.NODESET);
         assertEquals(3, entityNodes.getLength());
-        recordLimitExceeded = xp.evaluate("/merge-result:EntityMergeResultMessage/merge-result:RecordLimitExceeded", resultDocument);
+        recordLimitExceeded = xp.evaluate("/merge-result:EntityMergeResultMessage/merge-result:RecordLimitExceededIndicator", resultDocument);
         assertEquals("false", recordLimitExceeded);
 
         entityResolutionConfigurationNode = makeEntityResolutionConfigurationNode(null);
@@ -177,7 +177,7 @@ public class EntityResolutionMessageHandlerTest extends TestCase {
         assertEquals(inputEntityNodeCount, entityNodes.getLength());
         entityNodes = (NodeList) xp.evaluate("//merge-result-ext:MergedRecord", resultDocument, XPathConstants.NODESET);
         assertEquals(3, entityNodes.getLength());
-        recordLimitExceeded = xp.evaluate("/merge-result:EntityMergeResultMessage/merge-result:RecordLimitExceeded", resultDocument);
+        recordLimitExceeded = xp.evaluate("/merge-result:EntityMergeResultMessage/merge-result:RecordLimitExceededIndicator", resultDocument);
         assertEquals("false", recordLimitExceeded);
 
         entityResolutionConfigurationNode = makeEntityResolutionConfigurationNode("not an int");
@@ -190,7 +190,7 @@ public class EntityResolutionMessageHandlerTest extends TestCase {
         assertEquals(inputEntityNodeCount, entityNodes.getLength());
         entityNodes = (NodeList) xp.evaluate("//merge-result-ext:MergedRecord", resultDocument, XPathConstants.NODESET);
         assertEquals(3, entityNodes.getLength());
-        recordLimitExceeded = xp.evaluate("/merge-result:EntityMergeResultMessage/merge-result:RecordLimitExceeded", resultDocument);
+        recordLimitExceeded = xp.evaluate("/merge-result:EntityMergeResultMessage/merge-result:RecordLimitExceededIndicator", resultDocument);
         assertEquals("false", recordLimitExceeded);
 
         entityResolutionConfigurationNode = makeEntityResolutionConfigurationNode(2 + "");
@@ -204,7 +204,7 @@ public class EntityResolutionMessageHandlerTest extends TestCase {
         assertEquals(inputEntityNodeCount, entityNodes.getLength());
         entityNodes = (NodeList) xp.evaluate("//merge-result-ext:MergedRecord", resultDocument, XPathConstants.NODESET);
         assertEquals(6, entityNodes.getLength());
-        recordLimitExceeded = xp.evaluate("/merge-result:EntityMergeResultMessage/merge-result:RecordLimitExceeded", resultDocument);
+        recordLimitExceeded = xp.evaluate("/merge-result:EntityMergeResultMessage/merge-result:RecordLimitExceededIndicator", resultDocument);
         assertEquals("true", recordLimitExceeded);
 
         // LOG.info(new XmlConverter().toString(resultDocument));
@@ -255,7 +255,7 @@ public class EntityResolutionMessageHandlerTest extends TestCase {
         assertEquals(inputEntityNodeCount, entityNodes.getLength());
         entityNodes = (NodeList) xp.evaluate("//merge-result-ext:MergedRecord", resultDocument, XPathConstants.NODESET);
         assertEquals(6, entityNodes.getLength());
-        String recordLimitExceeded = xp.evaluate("/merge-result:EntityMergeResultMessage/merge-result:RecordLimitExceeded", resultDocument);
+        String recordLimitExceeded = xp.evaluate("/merge-result:EntityMergeResultMessage/merge-result:RecordLimitExceededIndicator", resultDocument);
         assertEquals("true", recordLimitExceeded);
 
         assertEquals("DUCK", xp.evaluate("//merge-result:EntityContainer/merge-result-ext:Entity[1]/ext:PersonSearchResult/ext:Person/nc:PersonName/nc:PersonSurName", resultDocument));
@@ -383,7 +383,7 @@ public class EntityResolutionMessageHandlerTest extends TestCase {
                     + "'])", resultDocument, XPathConstants.NUMBER)).intValue());
         }
 
-        String recordLimitExceeded = xp.evaluate("/merge-result:EntityMergeResultMessage/merge-result:RecordLimitExceeded", resultDocument);
+        String recordLimitExceeded = xp.evaluate("/merge-result:EntityMergeResultMessage/merge-result:RecordLimitExceededIndicator", resultDocument);
         assertEquals("false", recordLimitExceeded);
 
     }
