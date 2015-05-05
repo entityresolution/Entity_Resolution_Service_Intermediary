@@ -16,7 +16,7 @@
 	<groupId>gov.nij.bundles.intermediaries</groupId>
 	<artifactId>Entity_Resolution_Service_Intermediary</artifactId>
 	<packaging>bundle</packaging>
-	<version>1.0.3</version>
+	<version>1.0.4</version>
 
 	<name>NIJ :: Entity_Resolution_Service :: Intermediary</name>
 	<url>http://www.nij.gov</url>

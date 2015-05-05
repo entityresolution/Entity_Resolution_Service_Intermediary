@@ -127,14 +127,6 @@ public class MessageProcessor {
 		}
 			
 		exchange.getOut().setHeader(Client.REQUEST_CONTEXT , requestContext);
-
-		//We do this so we can preserve the recipient list rather than losing it in the out message
-		String recipientListReplyTo = (String) exchange.getIn().getHeader("recipientListReplyToEndpoint");
-		
-		if (StringUtils.isNotEmpty(recipientListReplyTo))
-		{	
-			exchange.getOut().setHeader("recipientListReplyToEndpoint", recipientListReplyTo);
-		}	
 			
 		exchange.getOut().setBody(exchange.getIn().getBody());
 	}
